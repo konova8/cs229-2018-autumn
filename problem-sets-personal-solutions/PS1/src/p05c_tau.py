@@ -24,4 +24,51 @@ def main(tau_values, train_path, valid_path, test_path, pred_path):
     # Run on the test set to get the MSE value
     # Save predictions to pred_path
     # Plot data
+
+    x_eval, y_eval = util.load_dataset(valid_path, add_intercept=True)
+    x_test, y_test = util.load_dataset(test_path, add_intercept=True)
+
+    model = LocallyWeightedLinearRegression(tau=0.5)
+    model.fit(x_train, y_train)
+
+    mse_values = {}
+    for tau in tau_values:
+        model = LocallyWeightedLinearRegression(tau=tau)
+        model.fit(x_train, y_train)
+
+        y_pred = model.predict(x_eval)
+
+        mse = np.mean((y_pred - y_eval) ** 2)
+        mse_values[tau] = mse
+        print(f'tau={tau}, MSE={mse}')
+
+        plt.figure()
+        plt.plot(x_train, y_train, 'bx', linewidth=2)
+        plt.plot(x_eval, y_pred, 'go', linewidth=2)
+        plt.title(f'MSE (with tau = {tau}): {mse}')
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.savefig(f'output/p05b_{tau}.png')
+
+    best_tau = min(mse_values, key=mse_values.get)
+    print(mse_values)
+
+    model = LocallyWeightedLinearRegression(tau=best_tau)
+    model.fit(x_train, y_train)
+
+    y_pred = model.predict(x_test)
+
+    mse = np.mean((y_pred - y_test) ** 2)
+    print(f'Best with tau={best_tau}, resulting MSE on test set: {mse}')
+
+    plt.figure()
+    plt.plot(x_train, y_train, 'bx', linewidth=2)
+    plt.plot(x_test, y_pred, 'go', linewidth=2)
+    plt.title(f'MSE (with tau = {best_tau}): {mse}')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.savefig(f'output/p05c_best_{best_tau}.png')
+
+    np.savetxt(pred_path, y_pred)
+
     # *** END CODE HERE ***
